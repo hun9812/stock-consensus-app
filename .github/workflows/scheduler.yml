@@ -1,35 +1,35 @@
-# .github/workflows/scheduler.yml
-name: Scheduled Scraper
+name: Scheduled EPS Scraper
 
 on:
   schedule:
-    - cron: '0 * * * *'   # 매 정각 실행 (UTC 기준, 한국은 +9시간)
-  workflow_dispatch:       # 수동 실행도 가능
+    - cron: '0 * * * *'  # 매시간
+  workflow_dispatch:
 
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v3
+      with:
+        persist-credentials: false  # 푸시 권한을 위해 false로 설정
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.10
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
 
-      - name: Run scheduler
-        run: |
-          python scheduler.py
+    - name: Run scraper
+      run: python scraper.py
 
-      - name: Commit new data
-        run: |
-          git config user.name github-actions
-          git config user.email actions@github.com
-          git add data/
-          git commit -m "update: new EPS data"
-          git push
-        continue-on-error: true
+    - name: Commit and Push
+      run: |
+        git config --global user.name 'github-actions'
+        git config --global user.email 'github-actions@github.com'
+        git add data/
+        git commit -m "Update EPS data [auto]" || echo "No changes to commit"
+        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
